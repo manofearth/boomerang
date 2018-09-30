@@ -358,6 +358,14 @@ BOOMR_check_doc_domain();
 		// and the beacon requires an Authorization token to accept your data.
 		beacon_auth_token: undefined,
 
+		// Sends beacons with Credentials (applies to XHR beacons, not IMG or `sendBeacon()`).
+		// If you need this, you may want to enable `beacon_disable_sendbeacon` as
+		// `sendBeacon()` does not support credentials.
+		beacon_with_credentials: false,
+
+		// Disables navigator.sendBeacon() support
+		beacon_disable_sendbeacon: false,
+
 		// Strip out everything except last two parts of hostname.
 		// This doesn't work well for domains that end with a country tld,
 		// but we allow the developer to override site_domain for that.
@@ -1964,6 +1972,8 @@ BOOMR_check_doc_domain();
 		 * need to call {@link BOOMR.page_ready} yourself.
 		 * @param {string} config.beacon_auth_key Beacon authorization key value
 		 * @param {string} config.beacon_auth_token Beacon authorization token.
+		 * @param {boolean} config.beacon_with_credentials Sends beacon with credentials
+		 * @param {boolean} config.beacon_disable_sendbeacon Disables `navigator.sendBeacon()` support
 		 * @param {string} config.beacon_url The URL to beacon results back to.
 		 * If not set, no beacon will be sent.
 		 * @param {string} config.beacon_type `GET`, `POST` or `AUTO`
@@ -1993,6 +2003,8 @@ BOOMR_check_doc_domain();
 				    "autorun",
 				    "beacon_auth_key",
 				    "beacon_auth_token",
+				    "beacon_with_credentials",
+				    "beacon_disable_sendbeacon",
 				    "beacon_url",
 				    "beacon_type",
 				    "site_domain",
@@ -3284,11 +3296,12 @@ BOOMR_check_doc_domain();
 			//
 			if (w && w.navigator &&
 			    typeof w.navigator.sendBeacon === "function" &&
-			    typeof w.Blob === "function" && 
+			    typeof w.Blob === "function" &&
 			    // As per W3C, The sendBeacon method does not provide ability to pass any
-			    // header other than 'Content-Type'. So if we need to send data with 
+			    // header other than 'Content-Type'. So if we need to send data with
 			    // 'Authorization' header, we need to fallback to good old xhr.
-			    typeof impl.beacon_auth_token === "undefined") {
+			    typeof impl.beacon_auth_token === "undefined" &&
+			    !impl.beacon_disable_sendbeacon) {
 				// note we're using sendBeacon with &sb=1
 				var blobData = new w.Blob([paramsJoined + "&sb=1"], {
 					type: "application/x-www-form-urlencoded"
@@ -3373,6 +3386,10 @@ BOOMR_check_doc_domain();
 				}
 
 				xhr.setRequestHeader(impl.beacon_auth_key, impl.beacon_auth_token);
+			}
+
+			if (impl.beacon_with_credentials) {
+				xhr.withCredentials = true;
 			}
 
 			xhr.send(paramsJoined);
