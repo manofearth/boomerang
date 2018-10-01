@@ -668,7 +668,7 @@
  * * `c.c.r`: Rage click count (Base-10)
  * * `c.m.p`: Mouse movement percentage (Base-10)
  * * `c.m.n`: Mouse movement pixels (Base-10)
- * * `c.ttfi`: Time to First Interactive (Base-10)
+ * * `c.ttfi`: Time to First Interaction (Base-10)
  * * `c.i.dc`: Delayed interaction count (Base-10)
  * * `c.i.dt`: Delayed interaction time (Base-10)
  * * `c.i.a`: Average interaction delay (Base-10)
