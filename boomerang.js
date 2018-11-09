@@ -3597,7 +3597,12 @@ BOOMR_check_doc_domain();
 		 *
 		 * @memberof BOOMR
 		 */
+    /* BEGIN_DEBUG */
 		boomr.debug = make_logger("debug");
+    /* END_DEBUG */
+    /* BEGIN_PROD */
+    boomr.debug = function() {};
+    /* END_PROD */
 
 		/**
 		 * Logs info messages to the console
