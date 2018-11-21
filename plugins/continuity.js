@@ -696,7 +696,7 @@
 	/**
 	 * Timeline collection interval
 	 */
-	var COLLECTION_INTERVAL = 100;
+	var COLLECTION_INTERVAL = 1000;
 
 	/**
 	 * Maximum length (ms) that events will be recorded, if not
@@ -1297,50 +1297,24 @@
 			}
 		}
 
-		/**
-		 * Gets stats for a type since the specified start time.
-		 *
-		 * @param {string} type Type
-		 * @param {number} since Start time
-		 *
-		 * @returns {object} Stats for the type
-		 */
-		function getStats(type, since) {
-			var count = 0,
-			    total = 0,
-			    min = Infinity,
-			    max = 0,
-			    val,
-			    sinceBucket = Math.floor((since - startTime) / COLLECTION_INTERVAL);
-
+		function getData(type, since, fillGapsWith) {
 			if (!data[type]) {
-				return 0;
+				return [];
 			}
 
-			for (var bucket in data[type]) {
-				bucket = parseInt(bucket, 10);
+			var sinceBucket = Math.floor((since - startTime) / COLLECTION_INTERVAL);
+			var toBucket = getTimeBucket();
+			var result = [];
 
-				if (bucket >= sinceBucket) {
-					if (data[type].hasOwnProperty(bucket)) {
-						val = data[type][bucket];
-
-						// calculate count, total and minimum
-						count++;
-						total += val;
-
-						min = Math.min(min, val);
-						max = Math.max(max, val);
-					}
+			for(var i = sinceBucket; i <= toBucket; i++) {
+				if (data[type].hasOwnProperty(i)) {
+					result[i] = data[type][i];
+				} else if (typeof fillGapsWith !== "undefined") {
+					result[i] = fillGapsWith;
 				}
 			}
 
-			// return the stats
-			return {
-				total: total,
-				count: count,
-				min: min,
-				max: max
-			};
+			return result;
 		}
 
 		/**
@@ -1721,7 +1695,7 @@
 			log: log,
 			increment: increment,
 			getTimeBucket: getTimeBucket,
-			getStats: getStats,
+			getData: getData,
 			analyze: analyze,
 			stop: stop,
 			onBeacon: onBeacon
@@ -1849,6 +1823,8 @@
 		function analyze(startTime) {
 			var i, j, task, obj, objs = [], attrs = [], attr;
 
+			impl.addToBeacon("c.lt.n", externalMetrics.longTasksCount(), true);
+
 			if (longTasks.length === 0) {
 				return;
 			}
@@ -1902,8 +1878,6 @@
 				objs.push(obj);
 			}
 
-			// add data to beacon
-			impl.addToBeacon("c.lt.n", externalMetrics.longTasksCount(), true);
 			impl.addToBeacon("c.lt.tt", externalMetrics.longTasksTime());
 
 			impl.addToBeacon("c.lt", compressJson(objs));
@@ -2242,11 +2216,11 @@
 		 * Analyzes FPS
 		 */
 		function analyze(startTime) {
-			impl.addToBeacon("c.f", externalMetrics.fps());
-			impl.addToBeacon("c.f.d", externalMetrics.fpsDuration());
-			impl.addToBeacon("c.f.m", externalMetrics.fpsMinimum());
-			impl.addToBeacon("c.f.l", externalMetrics.fpsLongFrames());
-			impl.addToBeacon("c.f.s", externalMetrics.fpsStart());
+			impl.addToBeacon("c.f", externalMetrics.fps(), true);
+			impl.addToBeacon("c.f.d", externalMetrics.fpsDuration(), true);
+			impl.addToBeacon("c.f.m", externalMetrics.fpsMinimum(), true);
+			impl.addToBeacon("c.f.l", externalMetrics.fpsLongFrames(), true);
+			impl.addToBeacon("c.f.s", externalMetrics.fpsStart(), true);
 		}
 
 		/**
@@ -2302,8 +2276,9 @@
 		externalMetrics.fpsMinimum = function() {
 			var dur = externalMetrics.fpsDuration();
 			if (dur) {
-				var min = t.getStats("fps", frameStartTime).min;
-				return min !== Infinity ? min : undefined;
+				// we have to drop first and last buckets, because they probably are not full (if sendBeacon is called manually)
+				var timeline = BOOMR.utils.reindexArray(t.getData("fps", frameStartTime, 0)).slice(1, -1);
+				return Math.min.apply(Math, timeline);
 			}
 		};
 

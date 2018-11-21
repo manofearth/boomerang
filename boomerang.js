@@ -340,6 +340,9 @@ BOOMR_check_doc_domain();
 		// Beacon URL
 		beacon_url: "",
 
+		// True value means that Boomerang shouldn't handle beacon send - it's up to some external application
+		beacon_send_externally: false,
+
 		// List of string regular expressions that must match the beacon_url.  If
 		// not set, or the list is empty, all beacon URLs are allowed.
 		beacon_urls_allowed: [],
@@ -1677,6 +1680,25 @@ BOOMR_check_doc_domain();
 			},
 
 			/**
+			 * Reconstruct array indices
+			 *
+			 * @param {Array} array The array to reindex
+			 *
+			 * @returns {Array} New array which indices start from 0
+			 *
+			 * @memberof BOOMR.utils
+			 */
+			reindexArray: function(array) {
+				var result = [];
+				for(var p in array) {
+					if (array.hasOwnProperty(p)) {
+						result.push(array[p]);
+					}
+				}
+				return result;
+			},
+
+			/**
 			 * Get a query parameter value from a URL's query string
 			 *
 			 * @param {string} param Query parameter name
@@ -1989,16 +2011,17 @@ BOOMR_check_doc_domain();
 		 */
 		init: function(config) {
 			var i, k,
-			    properties = [
-				    "autorun",
-				    "beacon_auth_key",
-				    "beacon_auth_token",
-				    "beacon_url",
-				    "beacon_type",
-				    "site_domain",
-				    "strip_query_string",
-				    "user_ip"
-			    ];
+				properties = [
+					"autorun",
+					"beacon_auth_key",
+					"beacon_auth_token",
+					"beacon_url",
+					"beacon_send_externally",
+					"beacon_type",
+					"site_domain",
+					"strip_query_string",
+					"user_ip"
+				];
 
 			BOOMR_check_doc_domain();
 
@@ -3234,6 +3257,11 @@ BOOMR_check_doc_domain();
 			    url, img, useImg = true, xhr, ret;
 
 			BOOMR.debug("Ready to send beacon: " + BOOMR.utils.objectToString(data));
+
+			if (impl.beacon_send_externally) {
+				impl.fireEvent("beacon", data);
+				return;
+			}
 
 			// Use the override URL if given
 			impl.beacon_url = impl.beacon_url_override || impl.beacon_url;
