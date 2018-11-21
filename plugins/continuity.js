@@ -696,7 +696,7 @@
 	/**
 	 * Timeline collection interval
 	 */
-	var COLLECTION_INTERVAL = 1000;
+	var COLLECTION_INTERVAL = 1000; // if changing, change externalMetrics.fpsMinimum realization
 
 	/**
 	 * Maximum length (ms) that events will be recorded, if not
@@ -2216,11 +2216,11 @@
 		 * Analyzes FPS
 		 */
 		function analyze(startTime) {
-			impl.addToBeacon("c.f", externalMetrics.fps(), true);
-			impl.addToBeacon("c.f.d", externalMetrics.fpsDuration(), true);
-			impl.addToBeacon("c.f.m", externalMetrics.fpsMinimum(), true);
-			impl.addToBeacon("c.f.l", externalMetrics.fpsLongFrames(), true);
-			impl.addToBeacon("c.f.s", externalMetrics.fpsStart(), true);
+			impl.addToBeacon("c.f", externalMetrics.fps());
+			impl.addToBeacon("c.f.d", externalMetrics.fpsDuration());
+			impl.addToBeacon("c.f.m", externalMetrics.fpsMinimum());
+			impl.addToBeacon("c.f.l", externalMetrics.fpsLongFrames());
+			impl.addToBeacon("c.f.s", externalMetrics.fpsStart());
 		}
 
 		/**
